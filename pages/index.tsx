@@ -1,169 +1,148 @@
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import styled from "styled-components";
-import Layout from "../components/Layout";
-import PostEditor from "../components/PostEditor";
-import PostItem from "../components/PostItem";
-import api from "../utils/api";
-import { getToken, parseJwt, logout } from "../utils/auth";
-import { Post } from "../types/post";
-
-const PageTitle = styled.h1`
-  font-size: 2rem;
-  margin-bottom: 20px;
-  text-align: center;
-
-  @media (max-width: 480px) {
-    font-size: 1.5rem;
-  }
-`;
-
-const UserInfo = styled.p`
-  margin-bottom: 20px;
-  text-align: center;
-
-  button {
-    margin-left: 12px;
-    padding: 6px 12px;
-    background-color: #e53e3e;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-
-    &:hover {
-      background-color: #c53030;
-    }
-  }
-`;
-
-const Pagination = styled.div`
-  margin-top: 20px;
-  text-align: center;
-
-  button {
-    margin: 0 8px;
-    padding: 8px 14px;
-    background-color: #3182ce;
-    border: none;
-    color: white;
-    font-weight: 600;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-
-    &:hover {
-      background-color: #2b6cb0;
-    }
-
-    &:disabled {
-      background-color: #a0aec0;
-      cursor: default;
-    }
-  }
-`;
+import { useState } from "react";
+import Link from "next/link";
+import UserInfo from "@/components/UserInfo";
 
 export default function Home() {
-  const router = useRouter();
-  const [user, setUser] = useState<{ id: string; name: string } | null>(null);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [page, setPage] = useState(1);
-  const [editPost, setEditPost] = useState<Post | null>(null);
-
-  useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-    const payload = parseJwt(token);
-    if (!payload) {
-      logout();
-      router.push("/login");
-      return;
-    }
-    setUser({ id: payload.id, name: payload.name });
-    fetchPosts(page);
-  }, [page]);
-
-  const fetchPosts = async (page: number) => {
-    try {
-      const res = await api.get(`/posts?page=${page}`);
-      setPosts(res.data);
-    } catch {
-      alert("게시글 불러오기 실패");
-    }
-  };
-
-  const handlePostSubmit = async (content: string) => {
-    try {
-      if (!user) return;
-      if (editPost) {
-        await api.put(`/posts/${editPost.id}`, { content });
-        setEditPost(null);
-      } else {
-        await api.post("/posts", { content });
-      }
-      fetchPosts(page);
-    } catch {
-      alert("글 저장 실패");
-    }
-  };
-
-  const handleEdit = (post: Post) => {
-    setEditPost(post);
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      await api.delete(`/posts/${id}`);
-      fetchPosts(page);
-    } catch {
-      alert("삭제 실패");
-    }
-  };
+  const categories = ["공지", "자유", "Q&A", "기타"];
+  const [selectedCategory, setSelectedCategory] = useState("공지");
+  const user =
+    typeof window !== "undefined" ? localStorage.getItem("userName") : null;
 
   return (
-    <Layout>
-      <PageTitle>게시판</PageTitle>
-      <UserInfo>
-        로그인 사용자: {user?.id} ({user?.name})
-        <button
-          onClick={() => {
-            logout();
-            router.push("/login");
+    <div style={{ maxWidth: 960, margin: "0 auto", padding: 20 }}>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 30,
+          flexWrap: "wrap",
+          gap: "10px",
+        }}
+      >
+        <h1
+          style={{
+            margin: 0,
+            fontWeight: "bold",
+            fontSize: "1.8rem",
+            color: "#222",
           }}
         >
-          로그아웃
-        </button>
-      </UserInfo>
+          더드림 솔루션
+        </h1>
 
-      <PostEditor
-        initialContent={editPost?.content || ""}
-        isEditing={Boolean(editPost)}
-        onSubmit={handlePostSubmit}
-      />
+        <nav style={{ display: "flex", gap: "12px" }}>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              style={{
+                background: "none",
+                border: "none",
+                padding: "6px 12px",
+                cursor: "pointer",
+                fontWeight: selectedCategory === cat ? "bold" : "normal",
+                color: selectedCategory === cat ? "#0070f3" : "#444",
+                borderBottom:
+                  selectedCategory === cat
+                    ? "2px solid #0070f3"
+                    : "2px solid transparent",
+                transition: "color 0.3s, border-bottom 0.3s",
+              }}
+            >
+              {cat}
+            </button>
+          ))}
+        </nav>
 
-      {posts.map((post) => (
-        <PostItem
-          key={post.id}
-          post={post}
-          userId={user?.id}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      ))}
+        <nav style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          {user ? (
+            <>
+              <span style={{ fontWeight: "500", color: "#333" }}>
+                <UserInfo />님 환영합니다
+              </span>
+              <button
+                onClick={() => {
+                  localStorage.removeItem("token");
+                  localStorage.removeItem("userName");
+                  location.reload();
+                }}
+                style={{
+                  padding: "8px 16px",
+                  cursor: "pointer",
+                  borderRadius: 6,
+                  border: "1px solid #e53e3e",
+                  backgroundColor: "#fff",
+                  color: "#e53e3e",
+                  fontWeight: "600",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#e53e3e";
+                  e.currentTarget.style.color = "#fff";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#fff";
+                  e.currentTarget.style.color = "#e53e3e";
+                }}
+              >
+                로그아웃
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                style={{
+                  padding: "8px 18px",
+                  backgroundColor: "#0070f3",
+                  color: "white",
+                  borderRadius: 6,
+                  fontWeight: "600",
+                  textDecoration: "none",
+                  transition: "background-color 0.3s ease",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#005bb5")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#0070f3")
+                }
+              >
+                로그인
+              </Link>
+              <Link
+                href="/register"
+                style={{
+                  padding: "8px 18px",
+                  borderRadius: 6,
+                  fontWeight: "600",
+                  textDecoration: "none",
+                  border: "2px solid #0070f3",
+                  color: "#0070f3",
+                  backgroundColor: "transparent",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#0070f3";
+                  e.currentTarget.style.color = "#fff";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = "#0070f3";
+                }}
+              >
+                회원가입
+              </Link>
+            </>
+          )}
+        </nav>
+      </header>
 
-      <Pagination>
-        <button
-          onClick={() => setPage((p) => Math.max(p - 1, 1))}
-          disabled={page === 1}
-        >
-          이전
-        </button>
-        <button onClick={() => setPage((p) => p + 1)}>다음</button>
-      </Pagination>
-    </Layout>
+      {/* 메인 콘텐츠 */}
+      <section>
+        <h2>{selectedCategory} 게시판</h2>
+      </section>
+    </div>
   );
 }
