@@ -1,5 +1,11 @@
-export type Post = {
+export type Category = "notice" | "free" | "qna" | "etc";
+
+export interface Post {
   id: string;
-  content: string;
   userId: string;
-};
+  category: Category;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt?: string;
+}

@@ -13,9 +13,11 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "axios": "^1.10.0",
+    "bootstrap-icons": "^1.13.1",
     "framer-motion": "^12.19.1",
     "next": "15.3.4",
     "react": "^19.0.0",
+    "react-bootstrap-icons": "^1.11.6",
     "react-dom": "^19.0.0",
     "sass": "^1.89.2",
     "styled-components": "^6.1.19"
